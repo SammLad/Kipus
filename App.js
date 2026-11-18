@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-// HU20: la app sigue funcionando en modo de memoria si AsyncStorage falla o no está disponible.
+// La app sigue funcionando en modo de memoria si AsyncStorage falla o no está disponible.
 let storage = null;
 try {
   storage = require('@react-native-async-storage/async-storage').default;
@@ -18,12 +18,17 @@ try {
 }
 
 const STORAGE_KEY = 'kipus-market-state-v1';
-const BLUE = '#1E3A8A';
+
+// Paleta: azul más claro y luminoso, con su versión suave para fondos.
+const BLUE = '#3B82F6';
+const BLUE_DARK = '#2563EB';
+const BLUE_SOFT = '#EFF6FF';
+const BLUE_BORDER = '#BFDBFE';
 const ORANGE = '#F97316';
 const CATEGORIES = ['Tecnología', 'Papelería', 'Ropa', 'Calzado'];
 const CATEGORY_FILTERS = ['Todas', ...CATEGORIES];
 
-// HU03: catálogo inicial solicitado, con precios COP enteros y sin inventario descontado por agregar al carrito.
+// Catálogo inicial solicitado, con precios COP enteros y sin inventario descontado por agregar al carrito.
 const INITIAL_PRODUCTS = [
   { id: 'PROD-001', nombre: 'Audífonos Bluetooth StudyBeat', categoria: 'Tecnología', precio: 45000, stock: 10, descripcion: 'Audífonos inalámbricos ligeros con 18 horas de batería y micrófono integrado para clases virtuales.' },
   { id: 'PROD-002', nombre: 'Mouse Inalámbrico ErgoClick', categoria: 'Tecnología', precio: 28000, stock: 15, descripcion: 'Mouse silencioso con receptor USB de bajo consumo, ideal para trabajar en la biblioteca o en clase.' },
@@ -103,7 +108,7 @@ function Field({ label, value, onChangeText, placeholder, keyboardType, multilin
 }
 
 export default function App() {
-  // HU01: marca y eslogan se muestran permanentemente en el encabezado común de todas las vistas.
+  // Marca y eslogan se muestran permanentemente en el encabezado común de todas las vistas.
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [favorites, setFavorites] = useState([]);
   const [cart, setCart] = useState([]);
@@ -126,7 +131,7 @@ export default function App() {
   const [editingProductId, setEditingProductId] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
-  // HU20: recuperación defensiva y limpieza de datos persistidos antes de mostrarlos.
+  // Recuperación defensiva y limpieza de datos persistidos antes de mostrarlos.
   useEffect(() => {
     let active = true;
     const restore = async () => {
@@ -192,7 +197,7 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
-  // HU20: guardado automático del inventario, favoritos, carrito e historial una vez finalizada la restauración.
+  // guardado automático del inventario, favoritos, carrito e historial una vez finalizada la restauración.
   useEffect(() => {
     if (!hydrated || !storage) return;
     storage.setItem(STORAGE_KEY, JSON.stringify({ products, favorites, cart, orders }))
@@ -203,7 +208,7 @@ export default function App() {
   const selectedOrder = orders.find((order) => order.code === selectedOrderId);
   const cartCount = cart.reduce((total, line) => total + line.quantity, 0);
 
-  // HU11 y HU17: resumen derivado de cantidades actuales; el cupón nunca genera descuento negativo.
+  // resumen derivado de cantidades actuales; el cupón nunca genera descuento negativo.
   const summary = useMemo(() => {
     const subtotal = cart.reduce((total, line) => {
       const product = products.find((item) => item.id === line.productId);
@@ -214,14 +219,14 @@ export default function App() {
     return { subtotal, discount, shipping, total: Math.max(0, subtotal - discount + shipping) };
   }, [cart, products, couponApplied]);
 
-  // HU16: retroalimentación visible en la interfaz para acciones y validaciones.
+  //retroalimentación visible en la interfaz para acciones y validaciones.
   const showMessage = (message) => setBanner(message);
   const goToTab = (tab) => {
     setActiveTab(tab);
     setScreen(tab);
   };
 
-  // HU08: mismo control inmutable de favoritos en tarjetas y detalle.
+  // Mismo control inmutable de favoritos en tarjetas y detalle.
   const toggleFavorite = (productId) => {
     const isFavorite = favorites.includes(productId);
     setFavorites((current) => isFavorite
@@ -230,7 +235,7 @@ export default function App() {
     showMessage(isFavorite ? 'Producto retirado de favoritos.' : 'Producto agregado a favoritos.');
   };
 
-  // HU09: agregar no modifica inventario; limita la cantidad a las existencias actuales.
+  // Agregar no modifica inventario; limita la cantidad a las existencias actuales.
   const addToCart = (product) => {
     if (!product || product.stock <= 0) {
       showMessage('Este producto está agotado y no se puede agregar.');
@@ -249,7 +254,7 @@ export default function App() {
     showMessage(`${product.nombre} agregado al carrito.`);
   };
 
-  // HU10: ajustes de cantidad inmutables, con validación de stock y eliminación explícita.
+  // Ajustes de cantidad inmutables, con validación de stock y eliminación explícita.
   const changeQuantity = (product, delta) => {
     const line = cart.find((item) => item.productId === product.id);
     if (!line) return;
@@ -285,7 +290,7 @@ export default function App() {
     }
   };
 
-  // HU12: el formulario solicita únicamente nombre, teléfono, municipio y dirección.
+  // El formulario solicita únicamente nombre, teléfono, municipio y dirección.
   const validateBuyer = () => {
     const labels = { nombre: 'Nombre', telefono: 'Teléfono', municipio: 'Municipio', direccion: 'Dirección' };
     const missing = Object.keys(labels).filter((key) => !buyer[key].trim());
@@ -296,7 +301,7 @@ export default function App() {
     return true;
   };
 
-  // HU13-HU15: valida toda la compra antes de mutar stock y guarda una copia inmutable del pedido.
+  // Valida toda la compra antes de mutar stock y guarda una copia inmutable del pedido.
   const confirmPurchase = () => {
     if (!validateBuyer()) return;
     if (!cart.length) {
@@ -325,7 +330,7 @@ export default function App() {
         totalLinea: product.precio * line.quantity,
       };
     });
-    // HU15: se conserva una instantánea con precios y cantidades para el detalle histórico.
+    // Se conserva una instantánea con precios y cantidades para el detalle histórico.
     const order = {
       code,
       createdAt: new Date().toISOString(),
@@ -336,7 +341,7 @@ export default function App() {
       shipping: summary.shipping,
       total: summary.total,
     };
-    // HU14: el inventario se descuenta solo después de validar todas las líneas de la compra.
+    // el inventario se descuenta solo después de validar todas las líneas de la compra.
     setProducts((current) => current.map((product) => {
       const purchased = cart.find((line) => line.productId === product.id);
       return purchased ? { ...product, stock: product.stock - purchased.quantity } : product;
@@ -350,7 +355,7 @@ export default function App() {
     showMessage(`Pedido ${code} confirmado. Simulación académica: no se realizó ningún cobro real.`);
   };
 
-  // HU18: el formulario único permite crear un producto o editarlo sin duplicar registros.
+  // El formulario único permite crear un producto o editarlo sin duplicar registros.
   const saveSellerProduct = () => {
     const price = Number(sellerForm.precio);
     const stock = Number(sellerForm.stock);
@@ -419,7 +424,7 @@ export default function App() {
     showMessage(`Editando ${product.nombre}.`);
   };
 
-  // HU19: calificaciones enteras de 1 a 5 y promedio calculado a partir de votos guardados.
+  // Calificaciones enteras de 1 a 5 y promedio calculado a partir de votos guardados.
   const submitReview = () => {
     const normalized = ratingInput.trim();
     if (!/^[1-5]$/.test(normalized)) {
@@ -439,9 +444,9 @@ export default function App() {
   };
 
   const filteredProducts = useMemo(() => {
-    // HU04: la búsqueda no distingue mayúsculas y al limpiarla conserva filtros y orden actuales.
+    // La búsqueda no distingue mayúsculas y al limpiarla conserva filtros y orden actuales.
     let result = products.filter((product) => {
-      // HU05: categoría y búsqueda se aplican conjuntamente sobre el catálogo.
+      // Categoría y búsqueda se aplican conjuntamente sobre el catálogo.
       const matchesCategory = category === 'Todas' || product.categoria === category;
       const term = query.trim().toLocaleLowerCase();
       const matchesQuery = !term || `${product.nombre} ${product.categoria} ${product.descripcion}`
@@ -449,7 +454,7 @@ export default function App() {
       return matchesCategory && matchesQuery;
     });
     if (screen === 'favorites') result = result.filter((product) => favorites.includes(product.id));
-    // HU06: ordenar crea una copia, conserva filtros y no muta el catálogo original.
+    // Ordenar crea una copia, conserva filtros y no muta el catálogo original.
     if (sortOrder === 'asc') result = [...result].sort((a, b) => a.precio - b.precio);
     if (sortOrder === 'desc') result = [...result].sort((a, b) => b.precio - a.precio);
     return result;
@@ -489,24 +494,37 @@ export default function App() {
     <View>
       <Text style={styles.sectionTitle}>{screen === 'favorites' ? 'Mis favoritos' : 'Encuentra lo que necesitas'}</Text>
       <Text style={styles.sectionSubtitle}>Útiles para estudiar, a precios pensados para ti.</Text>
-      <Field label="Buscar productos" value={query} onChangeText={setQuery} placeholder="Ej. cuadernos, tecnología..." />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-        {CATEGORY_FILTERS.map((item) => (
-          <Text
-            key={item}
-            accessibilityRole="button"
-            onPress={() => setCategory(item)}
-            style={[styles.chip, category === item && styles.chipSelected]}
-          >
-            {item}
-          </Text>
-        ))}
-      </ScrollView>
-      <View style={styles.sortRow}>
-        <Text style={styles.smallLabel}>Ordenar por precio:</Text>
-        <Text accessibilityRole="button" onPress={() => setSortOrder('asc')} style={[styles.sortButton, sortOrder === 'asc' && styles.sortSelected]}>Menor a mayor</Text>
-        <Text accessibilityRole="button" onPress={() => setSortOrder('desc')} style={[styles.sortButton, sortOrder === 'desc' && styles.sortSelected]}>Mayor a menor</Text>
+
+      {/* Buscador y filtros agrupados en un solo bloque blanco */}
+      <View style={styles.filterCard}>
+        <Field label="Buscar productos" value={query} onChangeText={setQuery} placeholder="Ej. cuadernos, tecnología..." />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+          {CATEGORY_FILTERS.map((item) => (
+            <Text
+              key={item}
+              accessibilityRole="button"
+              onPress={() => setCategory(item)}
+              style={[styles.chip, category === item && styles.chipSelected]}
+            >
+              {item}
+            </Text>
+          ))}
+        </ScrollView>
+        <View style={styles.separator} />
+        <Text style={styles.smallLabel}>Ordenar por precio</Text>
+        <View style={styles.sortRow}>
+          <Text accessibilityRole="button" onPress={() => setSortOrder('asc')} style={[styles.sortButton, sortOrder === 'asc' && styles.sortSelected]}>Menor a mayor</Text>
+          <Text accessibilityRole="button" onPress={() => setSortOrder('desc')} style={[styles.sortButton, sortOrder === 'desc' && styles.sortSelected]}>Mayor a menor</Text>
+          {sortOrder ? (
+            <Text accessibilityRole="button" onPress={() => setSortOrder('')} style={styles.clearSort}>Quitar orden</Text>
+          ) : null}
+        </View>
       </View>
+
+      <Text style={styles.resultsCount}>
+        {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
+      </Text>
+
       {filteredProducts.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>
@@ -536,6 +554,7 @@ export default function App() {
     return (
       <View>
         <Text style={styles.sectionTitle}>Tu carrito</Text>
+        <Text style={styles.sectionSubtitle}>{cartCount} {cartCount === 1 ? 'unidad' : 'unidades'} en tu pedido.</Text>
         {cart.map((line) => {
           const product = products.find((item) => item.id === line.productId);
           if (!product) return null;
@@ -543,13 +562,15 @@ export default function App() {
             <View key={line.productId} style={styles.card}>
               <Text style={styles.productName}>{product.nombre}</Text>
               <Text style={styles.muted}>{formatCOP(product.precio)} c/u · Stock: {product.stock}</Text>
-              <Text style={styles.lineTotal}>Total: {formatCOP(product.precio * line.quantity)}</Text>
-              <View style={styles.row}>
-                <ActionButton label="−" variant="outline" compact onPress={() => changeQuantity(product, -1)} />
-                <Text style={styles.quantityText}>{line.quantity}</Text>
-                <ActionButton label="+" variant="outline" compact onPress={() => changeQuantity(product, 1)} />
-                <ActionButton label="Eliminar" variant="danger" compact onPress={() => removeFromCart(product.id)} />
+              <View style={styles.cartFooter}>
+                <View style={styles.stepper}>
+                  <ActionButton label="−" variant="outline" compact onPress={() => changeQuantity(product, -1)} />
+                  <Text style={styles.quantityText}>{line.quantity}</Text>
+                  <ActionButton label="+" variant="outline" compact onPress={() => changeQuantity(product, 1)} />
+                </View>
+                <Text style={styles.lineTotal}>{formatCOP(product.precio * line.quantity)}</Text>
               </View>
+              <ActionButton label="Eliminar" variant="danger" compact onPress={() => removeFromCart(product.id)} />
             </View>
           );
         })}
@@ -592,7 +613,7 @@ export default function App() {
     </View>
   );
 
-  // HU15: historial de pedidos confirmados con acceso a su detalle inmutable.
+  // Historial de pedidos confirmados con acceso a su detalle inmutable.
   const renderOrderHistory = () => (
     <View>
       <Text style={styles.sectionTitle}>Historial de pedidos</Text>
@@ -604,9 +625,11 @@ export default function App() {
         </View>
       ) : orders.map((order) => (
         <View key={order.code} style={styles.card}>
-          <Text style={styles.productName}>{order.code}</Text>
+          <View style={styles.cardTop}>
+            <Text style={styles.productName}>{order.code}</Text>
+            <Text style={styles.price}>{formatCOP(order.total)}</Text>
+          </View>
           <Text style={styles.muted}>{new Date(order.createdAt).toLocaleString('es-CO')}</Text>
-          <Text style={styles.price}>{formatCOP(order.total)}</Text>
           <ActionButton label="Ver detalle del pedido" variant="outline" compact onPress={() => {
             setSelectedOrderId(order.code);
             setScreen('orderDetail');
@@ -642,7 +665,7 @@ export default function App() {
     if (!selectedProduct) {
       return <View style={styles.emptyState}><Text style={styles.emptyTitle}>Producto no disponible</Text><ActionButton label="Volver al catálogo" onPress={() => goToTab('catalog')} /></View>;
     }
-    // HU07: la vista detalla producto, disponibilidad y acciones sin reiniciar la sesión.
+    // La vista detalla producto, disponibilidad y acciones sin reiniciar la sesión.
     const reviews = selectedProduct.reviews || [];
     const average = reviews.length
       ? (reviews.reduce((sum, vote) => sum + vote, 0) / reviews.length).toFixed(1)
@@ -673,7 +696,9 @@ export default function App() {
         </View>
         <View style={styles.card}>
           <Text style={styles.subheading}>Reseñas de estudiantes</Text>
-          <Text style={styles.reviewText}>★ {average} · {reviews.length} {reviews.length === 1 ? 'voto' : 'votos'}</Text>
+          <View style={styles.ratingPill}>
+            <Text style={styles.ratingPillText}>★ {average} · {reviews.length} {reviews.length === 1 ? 'voto' : 'votos'}</Text>
+          </View>
           <Field label="Calificación (1 a 5)" value={ratingInput} onChangeText={setRatingInput} keyboardType="number-pad" placeholder="5" />
           <ActionButton label="Enviar calificación" variant="outline" onPress={submitReview} />
         </View>
@@ -728,7 +753,7 @@ export default function App() {
     return null;
   };
 
-  // HU02: navegación persistente entre las cinco secciones principales y contador derivado del carrito.
+  // Navegación persistente entre las cinco secciones principales y contador derivado del carrito.
   const navItems = [
     { key: 'catalog', label: 'Catálogo' },
     { key: 'favorites', label: 'Favoritos' },
@@ -739,7 +764,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" backgroundColor={BLUE} />
+      <StatusBar style="light" backgroundColor={BLUE_DARK} />
       <View style={styles.brandHeader}>
         <Text style={styles.brandName}>Kipus</Text>
         <Text style={styles.tagline}>Organiza tu semestre, cuida tu bolsillo.</Text>
@@ -780,60 +805,219 @@ function SummaryRows({ summary }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
-  brandHeader: { backgroundColor: BLUE, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 15 },
+
+  // Encabezado con azul claro y esquinas inferiores redondeadas para separarlo del contenido.
+  brandHeader: {
+    backgroundColor: BLUE,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 18,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+  },
   brandName: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', letterSpacing: 0.5 },
-  tagline: { color: '#DBEAFE', fontSize: 13, marginTop: 2 },
-  banner: { backgroundColor: '#FFF7ED', color: '#9A3412', paddingHorizontal: 16, paddingVertical: 11, fontSize: 13, borderBottomWidth: 1, borderBottomColor: '#FED7AA' },
+  tagline: { color: '#EFF6FF', fontSize: 13, marginTop: 3 },
+
+  banner: {
+    backgroundColor: '#FFF7ED',
+    color: '#9A3412',
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    fontSize: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FED7AA',
+  },
+
   page: { flex: 1 },
-  pageContent: { padding: 16, paddingBottom: 28 },
+  pageContent: { padding: 16, paddingBottom: 32 },
+
   sectionTitle: { color: '#0F172A', fontSize: 22, fontWeight: '800', marginBottom: 6 },
   sectionSubtitle: { color: '#64748B', fontSize: 14, marginBottom: 16, lineHeight: 20 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 },
-  categoryLabel: { color: BLUE, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+
+  // Etiqueta de categoría como pastilla azul suave: se lee mejor que el texto suelto.
+  categoryLabel: {
+    color: BLUE_DARK,
+    backgroundColor: BLUE_SOFT,
+    borderWidth: 1,
+    borderColor: BLUE_BORDER,
+    overflow: 'hidden',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+
   favoriteIcon: { color: '#64748B', fontSize: 26, lineHeight: 29, paddingHorizontal: 4 },
   favoriteActive: { color: '#E11D48' },
+
   productName: { color: '#0F172A', fontSize: 16, lineHeight: 22, fontWeight: '700', marginBottom: 6 },
   price: { color: ORANGE, fontSize: 18, fontWeight: '800', marginVertical: 3 },
   stockText: { color: '#475569', fontSize: 13, marginTop: 4, marginBottom: 12 },
   outOfStock: { color: '#B91C1C', fontWeight: '700' },
+
   row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  button: { overflow: 'hidden', backgroundColor: BLUE, color: '#FFFFFF', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, textAlign: 'center', fontSize: 14, fontWeight: '700', marginBottom: 8 },
+
+  button: {
+    overflow: 'hidden',
+    backgroundColor: BLUE,
+    color: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
   buttonSecondary: { backgroundColor: ORANGE },
-  buttonOutline: { backgroundColor: '#FFFFFF', color: BLUE, borderWidth: 1, borderColor: BLUE },
+  buttonOutline: { backgroundColor: '#FFFFFF', color: BLUE_DARK, borderWidth: 1, borderColor: BLUE_BORDER },
   buttonDanger: { backgroundColor: '#B91C1C' },
-  buttonDisabled: { backgroundColor: '#CBD5E1', color: '#64748B', borderColor: '#CBD5E1' },
+  buttonDisabled: { backgroundColor: '#E2E8F0', color: '#94A3B8', borderColor: '#E2E8F0' },
   buttonCompact: { paddingHorizontal: 12, paddingVertical: 9, marginBottom: 0, minWidth: 68 },
+
   fieldWrap: { marginBottom: 12 },
   fieldLabel: { color: '#334155', fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 15, color: '#0F172A' },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#0F172A',
+  },
   multilineInput: { minHeight: 88, textAlignVertical: 'top' },
-  chipScroll: { marginVertical: 12, flexGrow: 0 },
-  chip: { overflow: 'hidden', color: '#334155', backgroundColor: '#FFFFFF', borderColor: '#CBD5E1', borderWidth: 1, borderRadius: 20, paddingHorizontal: 13, paddingVertical: 8, marginRight: 7, marginBottom: 7, fontSize: 13, fontWeight: '600' },
+
+  // Bloque de filtros: fondo blanco con borde azul suave para agrupar buscador, categorías y orden.
+  filterCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: BLUE_BORDER,
+  },
+  chipScroll: { marginTop: 2, marginBottom: 2, flexGrow: 0 },
+  chip: {
+    overflow: 'hidden',
+    color: '#334155',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 7,
+    marginBottom: 7,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   chipSelected: { color: '#FFFFFF', backgroundColor: BLUE, borderColor: BLUE },
-  sortRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, marginBottom: 14 },
-  smallLabel: { color: '#64748B', fontSize: 12, marginRight: 2 },
-  sortButton: { overflow: 'hidden', color: BLUE, backgroundColor: '#FFFFFF', borderColor: '#CBD5E1', borderWidth: 1, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7, fontSize: 11, fontWeight: '600' },
+
+  sortRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7 },
+  smallLabel: { color: '#64748B', fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  sortButton: {
+    overflow: 'hidden',
+    color: BLUE_DARK,
+    backgroundColor: BLUE_SOFT,
+    borderColor: BLUE_BORDER,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   sortSelected: { color: '#FFFFFF', backgroundColor: BLUE, borderColor: BLUE },
-  emptyState: { backgroundColor: '#FFFFFF', borderRadius: 16, alignItems: 'center', padding: 24, marginTop: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  clearSort: { color: '#64748B', fontSize: 12, fontWeight: '600', textDecorationLine: 'underline', paddingVertical: 7 },
+
+  resultsCount: { color: '#64748B', fontSize: 12, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  emptyState: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    alignItems: 'center',
+    padding: 24,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: BLUE_BORDER,
+  },
   emptyTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
   muted: { color: '#64748B', fontSize: 13, lineHeight: 19, marginBottom: 8 },
   subheading: { color: '#0F172A', fontWeight: '800', fontSize: 16, marginBottom: 10 },
   separator: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 12 },
+
+  // Carrito: stepper a la izquierda y total de la línea alineado a la derecha.
+  cartFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 10 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   quantityText: { color: '#0F172A', fontWeight: '800', minWidth: 24, textAlign: 'center' },
-  lineTotal: { color: '#0F172A', fontSize: 14, fontWeight: '700', marginTop: 5 },
+  lineTotal: { color: '#0F172A', fontSize: 15, fontWeight: '800' },
+
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
   summaryValue: { color: '#334155', fontSize: 13, fontWeight: '600' },
   totalRow: { borderTopWidth: 1, borderTopColor: '#E2E8F0', marginTop: 5, paddingTop: 11 },
   totalLabel: { color: '#0F172A', fontSize: 16, fontWeight: '800' },
   summaryItem: { color: '#334155', fontSize: 13, lineHeight: 20, marginBottom: 7 },
+
   description: { color: '#334155', fontSize: 15, lineHeight: 23, marginVertical: 12 },
-  reviewText: { color: '#B45309', fontSize: 15, fontWeight: '700', marginBottom: 10 },
+  ratingPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 12,
+  },
+  ratingPillText: { color: '#B45309', fontSize: 13, fontWeight: '700' },
+
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 5, marginBottom: 12 },
-  listRow: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E2E8F0' },
+
+  listRow: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   listInfo: { flex: 1, paddingRight: 8 },
-  bottomNav: { flexGrow: 0, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E2E8F0', maxHeight: 62 },
-  navContent: { alignItems: 'center', paddingHorizontal: 5, paddingVertical: 7 },
-  navItem: { overflow: 'hidden', color: '#475569', fontSize: 12, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 11, borderRadius: 9, marginHorizontal: 2 },
+
+  bottomNav: {
+    flexGrow: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: BLUE_BORDER,
+    maxHeight: 64,
+  },
+  navContent: { alignItems: 'center', paddingHorizontal: 6, paddingVertical: 8 },
+  navItem: {
+    overflow: 'hidden',
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    borderRadius: 10,
+    marginHorizontal: 2,
+  },
   navItemActive: { color: '#FFFFFF', backgroundColor: BLUE },
 });
